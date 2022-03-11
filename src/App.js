@@ -5,6 +5,7 @@ function App() {
   const [cards, setcards] = useState([])
   const [lists, setlists] = useState([])
   const [editList, seteditList] = useState(null)
+  const [editCard, setEditCard] = useState(null)
   const getCard = () => {
     axios.get('http://localhost:3001/cards').then((res) => setcards(res.data))
   }
@@ -37,38 +38,56 @@ function App() {
       seteditList(null)
     })
   }
+  const saveEditCard = (e, id) => {
+    e.preventDefault()
+    axios.patch(`http://localhost:3001/cards/${id}`, { name: e.target.editCard.value }).then(() => {
+      getCard()
+      e.target.editCard.value = ''
+      setEditCard(null)
+    })
+  }
   const deleteCard = (id) => {
     axios.delete(`http://localhost:3001/cards/${id}`).then(() => {
       getCard()
     })
   }
+  const deleteList = (id) => {
+    axios.delete(`http://localhost:3001/lists/${id}`).then(() => {
+      getList()
+    })
+  }
   return (
-    <div className='flex overflow-auto gap-3'>
+    <div className='flex overflow-auto gap-3 p-3'>
       {
         lists.map((list, a) => {
           const listed = cards.filter((x) => x.list === list.id)
-          return <div className='border border-gray-500 p-4 space-y-3'>
+          return <div className='border border-gray-500 p-4 space-y-3 rounded-lg'>
             {editList === a ?
-              <form onSubmit={(e) => saveEditList(e, list.id)}>
+              <form className='flex justify-between space-x-2' onSubmit={(e) => saveEditList(e, list.id)}>
                 <input type="text" name="editlist" id="" placeholder='Edit list' defaultValue={list.name} />
                 <button type="submit">save</button>
               </form>
-              : <h1 onClick={() => seteditList(a)}>{list.name}</h1>
+              : <div className="flex justify-between" onClick={() => seteditList(a)}>{list.name} <button onClick={(e) => deleteList(list.id)}>x</button></div>
             }
-
             {listed.map((card, b) => {
-              return <div className='border border-gray-500 p-4 flex justify-between'>
-                {card.name} <button onClick={(e) => deleteCard(card.id)}>x</button>
-              </div>
+              return editCard === b ?
+                <form className='flex justify-between space-x-2' onSubmit={(e) => saveEditCard(e, card.id)}>
+                  <input type="text" name="editCard" id="" placeholder='Edit card' defaultValue={card.name} />
+                  <button type="submit">save</button>
+                </form>
+                :
+                <div className='border border-gray-500 p-4 flex justify-between' onClick={() => setEditCard(b)}>
+                  {card.name} <button onClick={(e) => deleteCard(card.id)}>x</button>
+                </div>
             })}
-            <form onSubmit={(e) => saveNewCard(e, list.id)}>
+            <form className="flex justify-between space-x-2" onSubmit={(e) => saveNewCard(e, list.id)}>
               <input type="text" name="newcard" id="" placeholder='Type to create new card' />
               <button type="submit">save</button>
             </form>
           </div>
         })
       }
-      <div className='border border-gray-500 p-4'>
+      <div className='border border-gray-500 p-4 rounded-lg'>
         <form onSubmit={saveNewList}>
           <input type="text" name="newlist" id="" placeholder='Type to create new list' />
           <button type="submit">save</button>
